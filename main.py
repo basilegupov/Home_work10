@@ -10,61 +10,89 @@ class Field:
 
 
 class Name(Field):
-    def validate(self):
-        # Логіка валідації для імені
-        if not self.value:
-            raise ValueError("Name is required.")
+    pass
 
 
 class Phone(Field):
-    def validate(self):
-        # Логіка валідації для номера телефону (10 цифр)
-        if self.value and not self.value.isdigit() or len(self.value) != 10:
+    def __init__(self, value):
+        if not value.isdigit() or len(value) != 10:
             raise ValueError("Invalid phone number format.")
+        super().__init__(value)
 
 
 class Record:
-    def __init__(self, name):
-        self.name = Name(name)
+    def __init__(self, name_contact):
+        self.name = Name(name_contact)
         self.phones = []
 
     def add_phone(self, phone):
         phone_field = Phone(phone)
-        phone_field.validate()
         self.phones.append(phone_field)
 
     def remove_phone(self, phone):
         self.phones = [p for p in self.phones if p.value != phone]
 
+    def find_phone(self, phone):
+        return next((p for p in self.phones if p.value == phone), None)
+
+    def edit_phone(self, old_phone, new_phone):
+        if self.find_phone(old_phone):
+            self.remove_phone(old_phone)
+            self.add_phone(new_phone)
+        else:
+            raise ValueError(f"Phone number {old_phone} not exist in {self.phones}.")
+
+    def __str__(self):
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+
 
 class AddressBook(UserDict):
     def add_record(self, record):
-        if not isinstance(record, Record):
-            raise ValueError("Invalid record type.")
-        record.name.validate()
         self.data[record.name.value] = record
 
-    def remove_record(self, name):
-        del self.data[name]
+    def find(self, name_contact):
+        return self.data.get(name_contact, None)
 
-    def search_records(self, query):
-        # Логіка пошуку за записами
-        return [record for record in self.data.values() if query.lower() in record.name.value.lower()]
+    def delete(self, name_contact):
+        if name_contact in self.data:
+            del self.data[name_contact]
 
 
-# Приклад використання:
 if __name__ == "__main__":
-    address_book = AddressBook()
+    book = AddressBook()
 
-    # Додавання запису
-    contact1 = Record("John Doe")
-    contact1.add_phone("1234567890")
-    address_book.add_record(contact1)
+    # Створення запису для John
+    john_record = Record("John")
+    john_record.add_phone("1234567890")
+    john_record.add_phone("5555555555")
 
-    # Пошук запису
-    results = address_book.search_records("John")
-    for result in results:
-        print(result.name.value, [phone.value for phone in result.phones])
+    # Додавання запису John до адресної книги
+    book.add_record(john_record)
 
-    # Видалення запису
-    address_book.remove_record("John Doe")
+    # Створення та додавання нового запису для Jane
+    jane_record = Record("Jane")
+    jane_record.add_phone("9876543210")
+    book.add_record(jane_record)
+
+    # Виведення всіх записів у книзі
+    for name, record in book.data.items():
+        print(record)
+
+    # Знаходження та редагування телефону для John
+    john = book.find("John")
+    john.edit_phone("1234567890", "1112223333")
+
+    print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
+
+    # Пошук конкретного телефону у записі John
+    found_phone = john.find_phone("5555555555")
+    print(f"{john.name}: {found_phone}")  # Виведення: 5555555555
+    found_phone = john.find_phone("5555555554")
+    print(f"{john.name}: {found_phone}")  # Виведення: None
+
+    # Виведення всіх записів у книзі
+    for name, record in book.data.items():
+        print(record)
+
+    # Видалення запису Jane
+    book.delete("Jane")
