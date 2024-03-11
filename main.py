@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # Виведення всіх записів у книзі
     for name, record in book.data.items():
-        print(record)
+        print(record, name)
 
     # Видалення запису Jane
     book.delete("Jane")
